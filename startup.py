@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import random
 import math
+import time
 # Defines the Starting App where you choose difficultys 
 class start_App():
     def __init__(self):
@@ -25,7 +26,7 @@ class start_App():
     def start_game(self):
         global diff
         diff = self.difficultys.index(self.choose_difficulty.get())
-        self.root.quit()
+        self.root.destroy()
         
         
         
@@ -42,7 +43,8 @@ class App():
         self.root.title("Minesweeper by Oluf")
         self.pressed = []
         self.root.geometry("700x700")
-        print(diff+1)
+        
+        self.first_press = True
         mines = {
             1: (9 * 9, 10),
             2: (16 * 16, 40),
@@ -60,16 +62,29 @@ class App():
     def genreate_mines(self):
         all_positions = [(x, y) for x in range(int(math.sqrt(self.ratio[0]))) for y in range(int(math.sqrt(self.ratio[0])))]
         self.mine_pos = set(random.sample(all_positions, self.ratio[1]))  # Store as a set for fast lookup
-        print(self.mine_pos)
+        
         
     def check_mine(self, x, y, button):
         # If the button was not pressed already, change the button color
         if (x, y) not in self.pressed:
             button.config(fg="red", bg="red")  # Change button color to red
             self.pressed.append((x, y))
-        elif (x, y) in self.mine_pos:
-            print("You pressed a mine!")
+        elif (x, y) in self.mine_pos and self.first_press == False:
+            for btn in self.buttons.values():
+                btn.destroy()
+            label_lost = tk.Label(self.root,text="You lost",font=("Arial", 120))
+            label_lost.place(x=0,y=0, width=700,height=700)
+            
+            self.root.update_idletasks()  # Erzwingt eine sofortige UI-Aktualisierung
+            time.sleep(2)
+            self.root.destroy()
+            start_App()
+            
         else:
+            self.first_press= False
+            if (x,y) in self.mine_pos:
+                self.mine_pos.remove((x,y))
+            
             # Call check_surroundings to check for neighboring mines
             mines = self.check_surroundings(x, y)
             if mines == 0:
@@ -93,7 +108,7 @@ class App():
         for ax in range(-1, 2):  # Loop through surrounding coordinates
             for ay in range(-1, 2):  # Loop through surrounding coordinates
                  if (x + ax, y + ay) in self.mine_pos:  # Check if there's a mine in the neighboring cell
-                    print(f"Mine at ({x + ax}, {y + ay})")
+                    
                     minecounter += 1
         return minecounter
     
